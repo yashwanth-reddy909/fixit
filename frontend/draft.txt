@@ -1,0 +1,229 @@
+pages/callbacks/googlelogin
+
+import React from 'react';
+import axios from 'axios';
+
+// functionality this component does:   
+// check state with localStorage
+// call backend to verify code and get user info
+// redirect to home page with user info in localStorage
+
+export default function GoogleLogin() {
+    React.useEffect(() => {
+        const code = new URLSearchParams(window.location.search).get('code');
+        const state = new URLSearchParams(window.location.search).get('state');
+        const latestCSRFToken = localStorage.getItem('latestCSRFToken');
+    
+        if (code && state === latestCSRFToken) {
+            // Call the backend to verify the code 
+            console.log('Code received:', code);
+            console.log('State matches:', state);
+            // pass the code as query param
+            axios.post(`http://localhost:8000/auth/google/callback?code=${code}`)
+                .then(response => {
+                    // Store user info in localStorage
+                    localStorage.setItem('userInfo', JSON.stringify(response.data));
+                    // Redirect to home page
+                    window.location.href = '/';
+                })
+                .catch(error => {
+                    console.error('Error during Google login:', error);
+                    alert('Login failed. Please try again.');
+                });
+        }
+        else {
+            console.error('Invalid state or code');
+            alert('Invalid login attempt. Please try again.');
+        }
+    }, []);
+
+    return (
+        <div style={{ textAlign: 'center', marginTop: '50px' }}>
+            <h1>Google Login</h1>
+            <p>Logging in...</p>
+        </div>
+    );
+}
+
+
+Home
+
+const Home = () => {
+    return (
+        <div>
+        <h1>Welcome to the Home Page</h1>
+        <p>This is the home page of our application.</p>
+        </div>
+    );
+}
+
+export default Home;
+
+
+Login
+
+import * as React from 'react';
+import GoogleIcon from '@mui/icons-material/Google';
+import Button from '@mui/material/Button';
+
+
+// google login
+function handleGoogleLogin() {
+  const CLIENT_ID = "54384433304-cq2q6nh3hukkf5b2s0ppsmpos6rn9i9h.apps.googleusercontent.com";
+  const REDIRECT_URI = `${window.location.origin}/auth/google/callback`;
+  const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  localStorage.setItem("latestCSRFToken", state);
+
+  // scopes  = "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"
+  const link = `https://accounts.google.com/o/oauth2/auth?` +
+    `scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile&` +
+    `response_type=code&` +
+    `access_type=offline&` +
+    `state=${state}&` +
+    `redirect_uri=${REDIRECT_URI}&` +
+    `client_id=${CLIENT_ID}`;
+  
+    window.location.assign(link);
+}
+
+export default function LogIn() {
+  return (
+    <div style={{ textAlign: 'center', marginTop: '50px' }}>
+      <h1>Log In Page</h1>
+      <p>Please log in to continue.</p>
+      <Button variant="contained" color="primary">
+        Log In
+      </Button>
+
+      <div style={{ margin: '20px 0', fontSize: '18px' }}>OR</div>
+      <Button variant="outlined" color="secondary" startIcon={<GoogleIcon />} onClick={handleGoogleLogin}>
+        Log In with Google
+      </Button>
+    </div>
+  );
+}
+
+
+services/auth.js
+
+// call the api to authenticate the user
+import axios from 'axios';
+
+// google callback url
+const GOOGLE_CALLBACK_URL = import.meta.env.VITE_GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback';
+
+// Function to initiate Google authentication
+export const authenticateWithGoogle = () => {
+    // Redirect to the Google authentication URL
+    window.location.href = GOOGLE_CALLBACK_URL;
+    }
+    
+    
+    
+src/app.js
+
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import LogIn from './pages/LogIn';
+import GoogleLogin from './pages/Callbacks/GoogleLogin';
+
+function App() {
+  return (
+      <>
+         <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<LogIn />} />
+            {/* auth/google/callback */}
+            <Route path="/auth/google/callback" element={<GoogleLogin />} />
+            {/* Add more routes as needed */}
+         </Routes>
+      </>
+  );
+}
+
+export default App;
+
+
+src/index.js
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();
+
+
+
+readme
+
+
+# My Notes
+
+## Folder Structure
+
+```
+src/
+├── assets/
+│   ├── images/
+│   ├── fonts/
+│   └── styles/ (or sass/, css/)
+├── components/
+│   ├── Button/
+│   │   ├── Button.js
+│   │   └── Button.module.css (or .scss)
+│   ├── Card/
+│   │   ├── Card.js
+│   │   └── Card.module.css
+│   └── ...
+├── hooks/
+│   ├── useAuth.js
+│   ├── useForm.js
+│   └── ...
+├── pages/ (or views/, containers/)
+│   ├── HomePage.js
+│   ├── AboutPage.js
+│   └── ...
+├── utils/
+│   ├── helpers.js
+│   ├── constants.js
+│   └── ...
+├── services/ (for API calls, data fetching)
+│   ├── api.js
+│   └── authService.js
+├── App.js
+├── index.js
+├── reportWebVitals.js
+└── setupTests.js
+```
+
+## Packages planned to use
+
+1. Zustand
+2. Material UI
+3. 
+
+
+
+
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@material-ui/core": "^4.12.4",
+    "@material-ui/icons": "^4.11.3",
+    "@mui/icons-material": "^7.1.1",
+    "@mui/material": "^7.1.1",
+    "axios": "^1.9.0",
